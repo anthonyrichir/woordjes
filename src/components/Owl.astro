@@ -1,0 +1,20 @@
+---
+/**
+ * Uiltje, la mascotte. Le dessin vit dans `src/assets/uiltje.svg` (aussi utilisé pour
+ * les icônes PWA). Le SVG est inliné pour être animable en CSS (voir global.css).
+ * L'humeur se pilote via l'attribut `data-mood` : idle | happy | oops | party.
+ */
+import svg from '../assets/uiltje.svg?raw';
+
+export const MASCOT_NAME = 'Uiltje';
+
+interface Props {
+  mood?: 'idle' | 'happy' | 'oops' | 'party';
+  class?: string;
+}
+const { mood = 'idle', class: cls = '' } = Astro.props;
+// On injecte l'humeur et la classe directement dans la balise <svg>.
+const html = svg.replace('class="uiltje"', `class="uiltje ${cls}" data-mood="${mood}"`);
+---
+
+<Fragment set:html={html} />

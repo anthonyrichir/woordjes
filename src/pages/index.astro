@@ -1,0 +1,42 @@
+---
+/** Accueil : Uiltje accueille l'enfant et liste les leçons disponibles. */
+import Layout from '../layouts/Layout.astro';
+import Owl from '../components/Owl.astro';
+import { lessons } from '../lib/lessons';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Layout>
+  <div class="wrap wrap-wide">
+    <section class="hero">
+      <div class="owl-stage">
+        <Owl />
+        <p class="bubble">Hallo&nbsp;! On révise ensemble&nbsp;?</p>
+      </div>
+      <h1>Woordjes <span>Mot à Mot · mes mots de néerlandais</span></h1>
+    </section>
+
+    <h2 class="sr-only">Leçons</h2>
+    {
+      lessons.length === 0 ? (
+        <p class="empty">Pas encore de leçon. Dépose un fichier CSV dans <code>src/lessons/</code>.</p>
+      ) : (
+        <ul class="lessons">
+          {lessons.map((l, i) => (
+            <li>
+              <a class="lesson-card" href={`${base}/lecon/${l.slug}/`}>
+                <span class="num" aria-hidden="true">{i + 1}</span>
+                <span>
+                  <h2>{l.title}</h2>
+                  <span class="count">{l.words.length} mots</span>
+                </span>
+                <span class="go" aria-hidden="true">➜</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</Layout>

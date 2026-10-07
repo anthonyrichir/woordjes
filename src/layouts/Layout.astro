@@ -1,0 +1,99 @@
+---
+/**
+ * Gabarit commun : <head> (PWA, iOS, polices, Umami), en-tête avec le hibou, pied de page.
+ */
+import { pwaInfo } from 'virtual:pwa-info';
+import Owl from '../components/Owl.astro';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title, description = 'Révise ton vocabulaire néerlandais avec Uiltje le hibou.' } = Astro.props;
+const fullTitle = title ? `${title} · Woordjes` : 'Woordjes · Mot à Mot';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Umami : chargé seulement si les deux variables sont définies (voir README / .env.example).
+const umamiSrc = import.meta.env.PUBLIC_UMAMI_SCRIPT_URL;
+const umamiId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <!-- viewport-fit=cover pour les safe areas iOS ; interactive-widget pour que le clavier
+         virtuel réduise la zone visible au lieu de masquer la barre de réponse. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#6C4AB6" />
+    <link rel="icon" href={`${base}/uiltje.svg`} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
+    <!-- Support PWA iOS (Safari n'utilise pas entièrement le manifest) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Woordjes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Manifest généré par @vite-pwa/astro -->
+    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
+    <!-- Polices rondes et lisibles (mises en cache par le service worker pour le hors ligne) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;700;800&display=swap"
+    />
+    <!-- Thème sombre : appliqué avant le rendu pour éviter un flash -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.dataset.theme = 'dark';
+          }
+        } catch (e) {}
+      })();
+    </script>
+    {umamiSrc && umamiId && <script defer src={umamiSrc} data-website-id={umamiId} data-do-not-track="true" />}
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href={`${base}/`} aria-label="Woordjes, accueil">
+        <Owl />
+        <span>Woordjes <small>Mot à Mot</small></span>
+      </a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Changer de thème (clair / sombre)" title="Clair / sombre">
+        <span aria-hidden="true">🌙</span>
+      </button>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">Woordjes · fait avec ❤️ pour réviser le néerlandais</footer>
+
+    <script>
+      // Enregistrement du service worker (mise à jour automatique, 100 % hors ligne ensuite).
+      import { registerSW } from 'virtual:pwa-register';
+      registerSW({ immediate: true });
+
+      // Bascule clair / sombre, mémorisée dans localStorage.
+      const btn = document.getElementById('theme-toggle')!;
+      const icon = btn.querySelector('span')!;
+      const paint = () => {
+        icon.textContent = document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙';
+      };
+      btn.addEventListener('click', () => {
+        const dark = document.documentElement.dataset.theme !== 'dark';
+        document.documentElement.dataset.theme = dark ? 'dark' : '';
+        if (!dark) delete document.documentElement.dataset.theme;
+        try {
+          localStorage.setItem('theme', dark ? 'dark' : 'light');
+        } catch {}
+        paint();
+      });
+      paint();
+    </script>
+  </body>
+</html>

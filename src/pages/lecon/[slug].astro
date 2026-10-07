@@ -1,0 +1,98 @@
+---
+/**
+ * Page d'une leçon : trois écrans (choix du sens, quiz, fin) pilotés par `src/scripts/quiz.ts`.
+ * Les mots sont injectés dans `data-words` au build : aucune requête au runtime.
+ */
+import Layout from '../../layouts/Layout.astro';
+import Owl from '../../components/Owl.astro';
+import { lessons } from '../../lib/lessons';
+
+export function getStaticPaths() {
+  return lessons.map((lesson) => ({ params: { slug: lesson.slug }, props: { lesson } }));
+}
+
+const { lesson } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Layout title={lesson.title}>
+  <div class="wrap quiz" id="quiz" data-slug={lesson.slug} data-title={lesson.title} data-words={JSON.stringify(lesson.words)}>
+    <!-- Écran 1 : choix du sens -->
+    <section class="screen" id="screen-setup">
+      <div>
+        <h1 class="quiz-title">{lesson.title}</h1>
+        <p class="quiz-sub">{lesson.words.length} mots</p>
+      </div>
+      <div class="owl-stage">
+        <Owl />
+        <p class="bubble">Dans quel sens on joue&nbsp;?</p>
+      </div>
+      <div class="choices">
+        <button class="btn btn-plum dir-btn" type="button" data-dir="nl-fr">
+          <span class="tags"><span class="tag tag-nl">NL</span> ➜ <span class="tag tag-fr">FR</span></span>
+          <span>Je lis en néerlandais, j'écris en français</span>
+        </button>
+        <button class="btn btn-mint dir-btn" type="button" data-dir="fr-nl">
+          <span class="tags"><span class="tag tag-fr">FR</span> ➜ <span class="tag tag-nl">NL</span></span>
+          <span>Je lis en français, j'écris en néerlandais</span>
+        </button>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="require-articles" />
+        <span>Je dois aussi écrire <b>de</b> ou <b>het</b></span>
+      </label>
+    </section>
+
+    <!-- Écran 2 : quiz -->
+    <section class="screen quiz-play" id="screen-play" hidden>
+      <div class="progress">
+        <div class="bar" role="progressbar" aria-label="Progression" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span id="bar-fill"></span>
+        </div>
+        <span id="counter">0 / {lesson.words.length}</span>
+      </div>
+      <div class="owl-stage">
+        <Owl />
+        <p class="bubble" id="owl-says">À toi&nbsp;!</p>
+      </div>
+      <div class="right">
+        <div class="prompt-card">
+          <span class="tag" id="prompt-tag">NL</span>
+          <strong class="word" id="prompt-word" lang="nl">…</strong>
+          <button class="btn speak" type="button" id="speak" aria-label="Écouter le mot en néerlandais">
+            <span aria-hidden="true">🔊</span> Écouter
+          </button>
+        </div>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <form class="answer-bar" id="answer-form" autocomplete="off">
+          <label class="sr-only" for="answer">Ta réponse</label>
+          <input id="answer" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Écris ta réponse…" required />
+          <button class="btn btn-mint" type="submit" id="submit">
+            <span aria-hidden="true" id="submit-icon">✓</span>
+            <span class="label" id="submit-label">Valider</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Écran 3 : fin de session -->
+    <section class="screen" id="screen-done" hidden>
+      <div class="done-card">
+        <div class="confetti" id="confetti" aria-hidden="true"></div>
+        <Owl mood="party" />
+        <h2 id="done-title">Bravo&nbsp;!</h2>
+        <p class="score"><b id="score">0</b> / <span id="score-total">{lesson.words.length}</span> du premier coup</p>
+        <p class="quiz-sub" id="done-msg"></p>
+        <div class="actions">
+          <button class="btn" type="button" id="restart"><span aria-hidden="true">🔁</span> Recommencer</button>
+          <a class="btn btn-ghost" href={`${base}/`}><span aria-hidden="true">📚</span> Autre leçon</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  import { startQuiz } from '../../scripts/quiz';
+  startQuiz(document.getElementById('quiz')!);
+</script>
