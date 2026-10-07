@@ -679,39 +679,74 @@ main {
 
 /* Retour (bonne / mauvaise réponse) */
 .feedback {
-  min-height: 3.6rem;
-  border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
-  font-weight: 800;
-  display: grid;
-  gap: 0.2rem;
+  border: 3px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.25rem 1rem;
+  width: min(92vw, 26rem);
+  margin: auto;
+  gap: 0.75rem;
   text-align: center;
-  transition: background 0.3s;
 }
-.feedback.ok {
-  background: var(--ok-bg);
-  color: var(--ok);
-  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+.feedback[open] {
+  display: grid;
 }
+.feedback::backdrop {
+  background: rgba(43, 45, 66, 0.55);
+  backdrop-filter: blur(2px);
+}
+.feedback.ok,
 .feedback.almost {
-  background: var(--ok-bg);
-  color: var(--mint-dark);
+  border-color: var(--ok);
   animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .feedback.oops {
-  background: var(--warn-bg);
-  color: var(--peach);
+  border-color: var(--peach);
   animation: wiggle 0.5s ease;
+}
+.feedback-title {
+  font-weight: 800;
+  font-size: 1.3rem;
+}
+.feedback.ok .feedback-title {
+  color: var(--ok);
+}
+.feedback.almost .feedback-title {
+  color: var(--mint-dark);
+}
+.feedback.oops .feedback-title {
+  color: var(--peach);
+}
+.feedback-pair {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.4rem 0.6rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--ink-soft);
 }
 .feedback .answer {
   color: var(--ink);
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   font-family: var(--font-display);
 }
 .feedback .hint {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--ink-soft);
+}
+.feedback .hint:empty {
+  display: none;
+}
+.feedback .actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
 }
 @keyframes pop-in {
   from {

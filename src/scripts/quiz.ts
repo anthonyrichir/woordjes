@@ -5,8 +5,6 @@
 import { check, type Direction } from '../lib/check';
 import type { Word } from '../lib/csv';
 
-type Phase = 'ask' | 'feedback';
-
 /** Phrases d'encouragement du hibou, piochées au hasard. */
 const CHEERS = ['Super !', 'Top !', 'Bravo !', 'Goed zo !', 'Oui !', 'Prima !', 'Génial !'];
 const COMFORTS = ['Pas grave, on la reverra.', 'Presque ! On réessaie plus tard.', 'Ça viendra, promis.', 'On la garde pour la fin.'];
@@ -56,11 +54,13 @@ export function startQuiz(root: HTMLElement) {
   const promptTag = $('prompt-tag');
   const promptWord = $('prompt-word');
   const speakBtn = $<HTMLButtonElement>('speak');
-  const feedback = $('feedback');
+  const feedback = $<HTMLDialogElement>('feedback');
+  const fbTitle = $('feedback-title');
+  const fbSource = $('feedback-source');
+  const fbAnswer = $('feedback-answer');
+  const fbHint = $('feedback-hint');
   const form = $<HTMLFormElement>('answer-form');
   const input = $<HTMLInputElement>('answer');
-  const submitIcon = $('submit-icon');
-  const submitLabel = $('submit-label');
 
   // --- État de la session -------------------------------------------------
   let direction: Direction = 'nl-fr';
@@ -71,7 +71,6 @@ export function startQuiz(root: HTMLElement) {
   let mastered = 0; // mots réussis (= progression)
   const missedFirstTry = new Set<number>();
   const seen = new Set<number>(); // mots déjà posés au moins une fois
-  let phase: Phase = 'ask';
 
   const show = (name: keyof typeof screens) => {
     for (const [k, el] of Object.entries(screens)) el.hidden = k !== name;
@@ -114,6 +113,7 @@ export function startQuiz(root: HTMLElement) {
   }
 
   function next() {
+    if (feedback.open) feedback.close();
     // Tour terminé : on repose les ratés, ou on a fini.
     if (queue.length === 0) {
       if (retry.length === 0) return finish();
@@ -123,7 +123,6 @@ export function startQuiz(root: HTMLElement) {
     }
     current = queue.shift()!;
     const w = words[current]!;
-    phase = 'ask';
     // Nouveau mot + relance de son animation d'apparition.
     promptWord.textContent = sourceOf(w);
     promptWord.style.animation = 'none';
@@ -131,13 +130,8 @@ export function startQuiz(root: HTMLElement) {
     promptWord.style.animation = '';
     // En FR→NL, écouter le mot donnerait la réponse : le bouton n'apparaît qu'après correction.
     speakBtn.hidden = direction === 'fr-nl';
-    feedback.className = 'feedback';
-    feedback.textContent = '';
     input.value = '';
-    input.readOnly = false;
     input.classList.remove('shake');
-    submitIcon.textContent = '✓';
-    submitLabel.textContent = 'Valider';
     setMood(owlPlay, 'idle');
     updateProgress();
     input.focus({ preventScroll: true });
@@ -147,49 +141,43 @@ export function startQuiz(root: HTMLElement) {
     const w = words[current]!;
     const verdict = check(input.value, acceptedOf(w), { direction, requireArticles });
     const expected = acceptedOf(w)[0]!;
-    phase = 'feedback';
-    input.readOnly = true;
-    submitIcon.textContent = '➜';
-    submitLabel.textContent = 'Suivant';
-    speakBtn.hidden = false; // on peut toujours écouter le mot NL une fois corrigé
+    fbSource.textContent = sourceOf(w);
+    fbAnswer.textContent = expected;
+    fbHint.textContent = '';
 
     if (verdict === 'wrong') {
       if (!seen.has(current)) missedFirstTry.add(current);
       retry.push(current);
       feedback.className = 'feedback oops';
-      feedback.innerHTML = `<span>Pas tout à fait…</span><span class="answer">${escapeHtml(expected)}</span>`;
+      fbTitle.textContent = 'Pas tout à fait…';
       input.classList.add('shake');
       owlSays.textContent = pick(COMFORTS);
       setMood(owlPlay, 'oops');
     } else {
       mastered++;
       feedback.className = verdict === 'exact' ? 'feedback ok' : 'feedback almost';
-      feedback.innerHTML =
-        verdict === 'exact'
-          ? `<span>✅ ${pick(CHEERS)}</span>`
-          : `<span>✅ Presque parfait !</span><span class="answer">${escapeHtml(expected)}</span><span class="hint">Attention aux accents</span>`;
+      fbTitle.textContent = verdict === 'exact' ? `✅ ${pick(CHEERS)}` : '✅ Presque parfait !';
+      if (verdict !== 'exact') fbHint.textContent = 'Attention aux accents';
       owlSays.textContent = verdict === 'exact' ? pick(CHEERS) : 'Bien ! Pense aux accents 😉';
       setMood(owlPlay, 'happy');
       updateProgress();
     }
     seen.add(current);
+    feedback.showModal();
   }
 
-  // Entrée = valider, puis Entrée = mot suivant (le champ garde le focus, le clavier reste ouvert).
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (phase === 'ask') {
-      if (!input.value.trim()) return input.focus();
-      answer();
-    } else {
-      next();
-    }
+    if (!input.value.trim()) return input.focus();
+    answer();
   });
-  // Le champ est en lecture seule pendant la correction : on garde le focus dessus pour qu'Entrée fonctionne.
-  input.addEventListener('blur', () => {
-    if (phase === 'feedback' && !screens.play.hidden) setTimeout(() => input.focus({ preventScroll: true }), 0);
+  // Modal de correction : « Suivant » (focus par défaut, donc Entrée) ou Échap → mot suivant.
+  $('feedback-next').addEventListener('click', next);
+  feedback.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    next();
   });
-  speakBtn.addEventListener('click', () => speak(dutchOf(words[current]!)));
+  for (const id of ['speak', 'feedback-speak']) $(id).addEventListener('click', () => speak(dutchOf(words[current]!)));
 
   // --- Écran 3 : fin -----------------------------------------------------------
   function finish() {
@@ -240,8 +228,4 @@ function confetti(host: HTMLElement) {
     c.style.transform = `rotate(${Math.random() * 360}deg)`;
     host.appendChild(c);
   }
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]!);
 }

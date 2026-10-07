@@ -63,13 +63,22 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             <span aria-hidden="true">🔊</span> Écouter
           </button>
         </div>
-        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <!-- Correction : modal native, Entrée/Échap = mot suivant -->
+        <dialog class="feedback" id="feedback" aria-labelledby="feedback-title">
+          <p class="feedback-title" id="feedback-title"></p>
+          <p class="feedback-pair"><span id="feedback-source"></span><span class="eq" aria-hidden="true">=</span><span class="answer" id="feedback-answer"></span></p>
+          <p class="hint" id="feedback-hint"></p>
+          <div class="actions">
+            <button class="btn speak" type="button" id="feedback-speak" aria-label="Écouter le mot en néerlandais"><span aria-hidden="true">🔊</span> Écouter</button>
+            <button class="btn btn-mint" type="button" id="feedback-next" autofocus><span class="label">Suivant</span> <span aria-hidden="true">➜</span></button>
+          </div>
+        </dialog>
         <form class="answer-bar" id="answer-form" autocomplete="off">
           <label class="sr-only" for="answer">Ta réponse</label>
           <input id="answer" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Écris ta réponse…" required />
           <button class="btn btn-mint" type="submit" id="submit">
-            <span aria-hidden="true" id="submit-icon">✓</span>
-            <span class="label" id="submit-label">Valider</span>
+            <span aria-hidden="true">✓</span>
+            <span class="label">Valider</span>
           </button>
         </form>
       </div>
