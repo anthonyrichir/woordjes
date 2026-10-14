@@ -503,6 +503,12 @@ main {
   background: var(--sun);
   color: var(--ink);
 }
+.lesson-card-mix {
+  border-style: dashed;
+}
+.lesson-card-mix .num {
+  background: var(--sun);
+}
 .lesson-card h2 {
   font-size: 1.35rem;
 }

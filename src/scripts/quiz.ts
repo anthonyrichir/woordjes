@@ -1,24 +1,16 @@
 /**
  * Logique du quiz côté client (island vanilla, sans framework).
  * Flux : choix du sens → questions (les ratés reviennent en fin) → écran de fin + événement Umami.
+ * Avec `data-sample`, chaque session tire au hasard au plus ce nombre de mots (questionnaire « toutes les leçons »).
  */
 import { check, type Direction } from '../lib/check';
 import type { Word } from '../lib/csv';
+import { sample, shuffle } from '../lib/random';
 
 /** Phrases d'encouragement du hibou, piochées au hasard. */
 const CHEERS = ['Super !', 'Top !', 'Bravo !', 'Goed zo !', 'Oui !', 'Prima !', 'Génial !'];
 const COMFORTS = ['Pas grave, on la reverra.', 'Presque ! On réessaie plus tard.', 'Ça viendra, promis.', 'On la garde pour la fin.'];
 const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
-
-/** Mélange de Fisher-Yates (copie). */
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j]!, a[i]!];
-  }
-  return a;
-}
 
 /** Lecture d'un mot néerlandais via Web Speech (voix nl-NL si dispo, sinon n'importe quel nl). */
 function speak(text: string) {
@@ -41,7 +33,8 @@ function setMood(owl: Element, mood: 'idle' | 'happy' | 'oops' | 'party') {
 }
 
 export function startQuiz(root: HTMLElement) {
-  const words = JSON.parse(root.dataset.words!) as Word[];
+  const pool = JSON.parse(root.dataset.words!) as Word[];
+  const sampleSize = Number(root.dataset.sample) || 0;
   const title = root.dataset.title!;
   const $ = <T extends HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
 
@@ -63,6 +56,7 @@ export function startQuiz(root: HTMLElement) {
   const input = $<HTMLInputElement>('answer');
 
   // --- État de la session -------------------------------------------------
+  let words = pool; // mots de la session (nouvel échantillon à chaque session si `sampleSize`)
   let direction: Direction = 'nl-fr';
   let requireArticles = false;
   let queue: number[] = []; // indices des mots à poser dans ce tour
@@ -91,6 +85,7 @@ export function startQuiz(root: HTMLElement) {
   }
 
   function begin() {
+    words = sampleSize ? sample(pool, sampleSize) : pool;
     queue = shuffle(words.map((_, i) => i));
     retry = [];
     mastered = 0;

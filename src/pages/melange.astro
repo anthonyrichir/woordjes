@@ -1,0 +1,12 @@
+---
+/** Questionnaire « toutes les leçons » : à chaque session, au plus MIX_SIZE mots tirés au hasard. */
+import Layout from '../layouts/Layout.astro';
+import Quiz from '../components/Quiz.astro';
+import { allWords, MIX_SIZE } from '../lib/lessons';
+
+const title = 'Toutes les leçons';
+---
+
+<Layout title={title}>
+  <Quiz title={title} words={allWords} sample={MIX_SIZE} />
+</Layout>

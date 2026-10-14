@@ -2,7 +2,7 @@
  * Chargement des leçons au moment du build.
  * Chaque fichier `src/lessons/*.csv` devient une leçon (parsing dans `csv.ts`).
  */
-import { parseCsv, titleFromSlug, type Lesson } from './csv.ts';
+import { parseCsv, titleFromSlug, type Lesson, type Word } from './csv.ts';
 export type { Lesson, Word } from './csv.ts';
 
 // `import.meta.glob` avec `eager` + `?raw` : les CSV sont lus à la compilation, jamais au runtime.
@@ -14,3 +14,11 @@ export const lessons: Lesson[] = Object.entries(files)
     return { slug, title: titleFromSlug(slug), words: parseCsv(raw) };
   })
   .sort((a, b) => a.slug.localeCompare(b.slug, 'fr', { numeric: true }));
+
+/** Nombre maximum de mots tirés au hasard dans le questionnaire « toutes les leçons ». */
+export const MIX_SIZE = 30;
+
+/** Tous les mots de toutes les leçons, sans doublon (même mot affiché en NL et en FR). */
+export const allWords: Word[] = [
+  ...new Map(lessons.flatMap((l) => l.words).map((w) => [`${w.nl[0]}|${w.fr[0]}`, w])).values(),
+];

@@ -78,18 +78,21 @@ src/
   lessons/            ← un CSV par leçon
   lib/csv.ts          ← parsing CSV + titre depuis le nom de fichier (pur, testé)
   lib/check.ts        ← correction des réponses (casse, espaces, accents, articles, variantes)
-  lib/lessons.ts      ← chargement des CSV au build (import.meta.glob)
+  lib/lessons.ts      ← chargement des CSV au build (import.meta.glob) + mots de toutes les leçons
+  lib/random.ts       ← mélange et tirage aléatoire (pur, testé)
   scripts/quiz.ts     ← logique du quiz côté client
   components/Owl.astro← la mascotte (SVG inline, animée en CSS) ; nom dans MASCOT_NAME
   assets/uiltje.svg   ← dessin source du hibou (icônes + favicon via scripts/make-icons.mjs)
   layouts/Layout.astro← <head> PWA/iOS, polices, Umami, thème sombre
-  pages/              ← accueil + lecon/[slug]
+  components/Quiz.astro← les trois écrans du quiz (leçon ou mélange)
+  pages/              ← accueil + lecon/[slug] + melange (toutes les leçons)
   styles/global.css   ← design mobile-first, animations, prefers-reduced-motion
 ```
 
 ## Fonctionnement du quiz
 
 - Choix du sens (NL→FR ou FR→NL), case « je dois écrire de/het ».
+- Carte **« Toutes les leçons »** sur l'accueil (dès 2 leçons) : chaque session tire au hasard au plus 30 mots parmi toutes les leçons (`MIX_SIZE` dans `src/lib/lessons.ts`), un nouveau tirage à chaque « Recommencer ».
 - Mots dans un ordre aléatoire, correction immédiate, les mots ratés reviennent en fin de session jusqu'à réussite.
 - Tolérance : casse, espaces, apostrophes ; accents acceptés mais signalés.
 - **Entrée** pour valider, **Entrée** à nouveau pour passer au mot suivant.
